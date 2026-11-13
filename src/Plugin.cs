@@ -16,6 +16,7 @@ public class Plugin : BasePlugin
     internal static ManualLogSource Logger;
     internal static ConfigEntry<bool> KeyboardForPlayerOne;
     internal static ConfigEntry<int> LastPlayerTwoCharacter;
+    internal static ConfigEntry<bool> LogInput;
 
     public override void Load()
     {
@@ -27,8 +28,13 @@ public class Plugin : BasePlugin
             "State", "LastPlayerTwoCharacter", 0,
             "The character that player 2 selected last. The mod writes this value.");
 
+        LogInput = Config.Bind(
+            "Debug", "LogInput", false,
+            "If true, the mod writes the controller state and the character state to the log each second.");
+
         AddComponent<CoopLobby>();
         Harmony.CreateAndPatchAll(typeof(CharacterSelectPatches), Guid);
+        Harmony.CreateAndPatchAll(typeof(LevelUpPatches), Guid);
         Log.LogInfo("Local coop is active. Open the character select page to let player 2 join.");
     }
 }
@@ -43,4 +49,15 @@ internal static class CharacterSelectPatches
     [HarmonyPostfix]
     [HarmonyPatch(typeof(WSCharacterSelectPage), nameof(WSCharacterSelectPage.OnHideFinish))]
     private static void AfterHide() => CoopLobby.Close();
+}
+
+[HarmonyPatch]
+internal static class LevelUpPatches
+{
+    // With more than one player, the check throws a NullReferenceException in
+    // WSLevelUpPage.CanCharacterReceivePass and the level-up page stays empty.
+    // Without the check, the page behaves as in a run with one player: no pass button.
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(WSLevelUpPage), nameof(WSLevelUpPage.CheckIfPassAvailable))]
+    private static bool SkipPassCheck() => false;
 }

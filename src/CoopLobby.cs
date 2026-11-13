@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
 using VampireSurvivors.Data;
+using VampireSurvivors.Data.Characters;
 using VampireSurvivors.Framework;
 using VampireSurvivors.Objects;
+using Rewired;
 using UnityEngine;
 using Wilson.UI;
 using RewiredAction = RewiredConsts.Action;
@@ -25,6 +27,9 @@ public class CoopLobby : MonoBehaviour
     private readonly List<CharacterType> _choices = new();
     private readonly Dictionary<CharacterType, string> _names = new();
     private readonly Dictionary<int, int> _stickDirection = new();
+    private int _playerOnePadId = -1;
+    private int _lastMenuPadId = -1;
+    private float _nextInputLog;
     private string _status = "";
     private GUIStyle _style;
 
@@ -37,12 +42,20 @@ public class CoopLobby : MonoBehaviour
         if (_instance == null) return;
         _instance._page = page;
         _instance._choices.Clear();
+        try
+        {
+            _instance.RememberPlayerOnePad();
+        }
+        catch (Exception e)
+        {
+            Plugin.Logger.LogError(e);
+        }
 
         var manager = MultiplayerManager.Instance;
         if (manager == null) return;
-        if (Plugin.KeyboardForPlayerOne.Value) manager.SetControllerAssignedToPlayer1(false);
         manager.AllowPlayerJoining = true;
         manager.AllowPlayerRemoval = true;
+        if (Plugin.LogInput.Value) Plugin.Logger.LogInfo($"Lobby open. The controller of player 1 is {_instance._playerOnePadId}.");
     }
 
     internal static void Close()
@@ -64,7 +77,13 @@ public class CoopLobby : MonoBehaviour
 
     private void Update()
     {
-        if (_page == null) return;
+        if (_page == null)
+        {
+            TrackMenuPad();
+            if (Plugin.LogInput.Value) LogSession();
+            return;
+        }
+
         try
         {
             Tick();
@@ -76,6 +95,52 @@ public class CoopLobby : MonoBehaviour
         }
     }
 
+    private void LogSession()
+    {
+        if (!ReInput.isReady || Time.unscaledTime < _nextInputLog) return;
+        _nextInputLog = Time.unscaledTime + 1f;
+        var manager = MultiplayerManager.Instance;
+        if (manager == null || manager.GetPlayers().Count < 2) return;
+
+        try
+        {
+            var selected = manager.GetSelectedPlayer();
+            var text = $"session: selected={(selected == null ? -1 : selected.id)} blocked={manager.IsUIBeingBlocked} timeScale={Time.timeScale:0.0}";
+            var ui = manager._uiControllingPlayers;
+            if (ui != null) text += $" uiPlayers=[{string.Join(",", ui)}]";
+            foreach (var player in manager.GetPlayers())
+            {
+                var maps = new Il2CppSystem.Collections.Generic.List<ControllerMap>();
+                player.controllers.maps.GetAllMaps(ControllerType.Joystick, maps);
+                text += $" | player {player.id} pads={player.controllers.joystickCount} any={player.GetAnyButton()}"
+                    + $" confirm={player.GetButton(RewiredAction.PrimaryConfirm)} submit={player.GetButton(RewiredAction.UISubmit)}"
+                    + $" moveX={player.GetAxis(RewiredAction.Move_Horizontal):0.0} maps=";
+                foreach (var map in maps) text += $"{map.categoryId}/{map.layoutId}:{(map.enabled ? "on" : "off")}:{map.elementMapCount} ";
+            }
+
+            foreach (var character in manager.GetAllCharacters())
+            {
+                text += $" | character {character._PlayerIndex} {character._currentCharacterData?.charName} hp={character.CurrentHp:0} dead={character.IsDead}"
+                    + $" main={character.CountsAsMainCharacterForRevivals} revival={character.MultiplayerRevivalAllowed}";
+            }
+
+            Plugin.Logger.LogInfo(text);
+        }
+        catch (Exception e)
+        {
+            Plugin.Logger.LogError(e);
+        }
+    }
+
+    private void TrackMenuPad()
+    {
+        if (!ReInput.isReady) return;
+        foreach (var joystick in ReInput.controllers.GetJoysticks())
+        {
+            if (joystick.GetAnyButtonDown()) _lastMenuPadId = joystick.id;
+        }
+    }
+
     private void Tick()
     {
         var manager = MultiplayerManager.Instance;
@@ -84,6 +149,9 @@ public class CoopLobby : MonoBehaviour
 
         // The item list of the page is empty until the page fills it.
         if (_choices.Count == 0) ReadChoices();
+
+        JoinNewPlayers(manager);
+        if (Plugin.LogInput.Value) LogInput(manager);
 
         var players = manager.GetPlayers();
         var lines = new List<string>();
@@ -125,6 +193,101 @@ public class CoopLobby : MonoBehaviour
         _status = string.Join("\n", lines);
     }
 
+    // Player 1 is the player who operated the menus before the character select page.
+    private void RememberPlayerOnePad()
+    {
+        _playerOnePadId = -1;
+        if (Plugin.KeyboardForPlayerOne.Value) return;
+
+        var playerOne = ReInput.players.GetPlayer(0);
+        var fallback = -1;
+        foreach (var joystick in ReInput.controllers.GetJoysticks())
+        {
+            if (!playerOne.controllers.ContainsController(joystick)) continue;
+            if (fallback < 0) fallback = joystick.id;
+            if (joystick.id == _lastMenuPadId) _playerOnePadId = joystick.id;
+        }
+
+        if (_playerOnePadId < 0) _playerOnePadId = fallback;
+    }
+
+    // The join code of the game expects that Rewired already gave the controller to an extra player.
+    // Warhammer Survivors gives all controllers to player 1, so the mod moves the controller itself.
+    private void JoinNewPlayers(MultiplayerManager manager)
+    {
+        var joined = manager.GetPlayers();
+        foreach (var joystick in ReInput.controllers.GetJoysticks())
+        {
+            if (joystick.id == _playerOnePadId || !joystick.GetAnyButtonDown()) continue;
+
+            var inUse = false;
+            for (var i = 1; i < joined.Count; i++) inUse |= joined[i].controllers.ContainsController(joystick);
+            if (inUse) continue;
+
+            RewiredPlayer free = null;
+            for (var id = 1; id < ReInput.players.playerCount && free == null; id++)
+            {
+                var candidate = ReInput.players.GetPlayer(id);
+                if (candidate != null && !joined.Contains(candidate)) free = candidate;
+            }
+
+            if (free == null) return;
+            var layouts = PlayerOneLayouts(joystick);
+            free.controllers.AddController(joystick, true);
+            AddMissingMaps(free, joystick, layouts);
+            manager.AddPlayer(free);
+            Plugin.Logger.LogInfo($"Controller {joystick.id} ({joystick.name}) joined as Rewired player {free.id}.");
+        }
+    }
+
+    // The Rewired data of the game gives the menu actions of Warhammer Survivors to player 1 only.
+    private static List<(int category, int layout, bool enabled)> PlayerOneLayouts(Joystick joystick)
+    {
+        var maps = new Il2CppSystem.Collections.Generic.List<ControllerMap>();
+        ReInput.players.GetPlayer(0).controllers.maps.GetAllMaps(ControllerType.Joystick, maps);
+
+        var own = new List<(int, int, bool)>();
+        var all = new List<(int, int, bool)>();
+        foreach (var map in maps)
+        {
+            var entry = (map.categoryId, map.layoutId, map.enabled);
+            if (map.controllerId == joystick.id) own.Add(entry);
+            if (!all.Exists(e => e.Item1 == entry.Item1 && e.Item2 == entry.Item2)) all.Add(entry);
+        }
+
+        return own.Count > 0 ? own : all;
+    }
+
+    private static void AddMissingMaps(RewiredPlayer player, Joystick joystick, List<(int category, int layout, bool enabled)> layouts)
+    {
+        foreach (var (category, layout, enabled) in layouts)
+        {
+            if (player.controllers.maps.GetMap(joystick, category, layout) != null) continue;
+            var map = ReInput.mapping.GetJoystickMapInstance(joystick, category, layout);
+            if (map == null) continue;
+            player.controllers.maps.AddMap(joystick, map, enabled);
+            if (Plugin.LogInput.Value) Plugin.Logger.LogInfo($"Added the controller map {category}/{layout} to Rewired player {player.id}.");
+        }
+    }
+
+    private void LogInput(MultiplayerManager manager)
+    {
+        if (Time.unscaledTime < _nextInputLog) return;
+        _nextInputLog = Time.unscaledTime + 2f;
+
+        var text = $"joined={manager.GetPlayers().Count} joining={manager.AllowPlayerJoining} playerOnePad={_playerOnePadId} choices={_choices.Count}";
+        foreach (var joystick in ReInput.controllers.GetJoysticks())
+        {
+            text += $" | pad {joystick.id} '{joystick.name}' anyButton={joystick.GetAnyButton()} owners=";
+            for (var id = 0; id < ReInput.players.playerCount; id++)
+            {
+                if (ReInput.players.GetPlayer(id).controllers.ContainsController(joystick)) text += id;
+            }
+        }
+
+        Plugin.Logger.LogInfo(text);
+    }
+
     private int ReadStep(RewiredPlayer player)
     {
         if (player.GetButtonDown(RewiredAction.DPadLeft) || player.GetButtonDown(RewiredAction.PrimaryPrevious)) return -1;
@@ -147,7 +310,7 @@ public class CoopLobby : MonoBehaviour
             var type = character.CharacterType;
             if (_choices.Contains(type)) continue;
             _choices.Add(type);
-            _names[type] = character.CharacterData?.charName ?? type.ToString();
+            _names[type] = DisplayName(character.CharacterData) ?? type.ToString();
         }
     }
 
@@ -187,6 +350,18 @@ public class CoopLobby : MonoBehaviour
     private static Il2CppSystem.Collections.Generic.Dictionary<RewiredPlayer, CoopSelections> Selections(MultiplayerManager manager)
     {
         return manager?._playerOptions?.Config?.MultiplayerSelections;
+    }
+
+    private static string DisplayName(CharacterData data)
+    {
+        if (data == null) return null;
+        var parts = new List<string>();
+        foreach (var part in new[] { data.prefix, data.charName, data.surname })
+        {
+            if (!string.IsNullOrWhiteSpace(part)) parts.Add(part.Trim());
+        }
+
+        return parts.Count > 0 ? string.Join(" ", parts) : null;
     }
 
     private string Name(CharacterType type) => _names.TryGetValue(type, out var name) ? name : type.ToString();

@@ -2,13 +2,37 @@
 
 A BepInEx 6 plugin that enables the hidden shared-screen cooperative mode of Warhammer Survivors for two local players.
 
-The game uses the code of Vampire Survivors. The session code still supports more players. This plugin adds the join step and the character choice for player 2 on the character select page.
+The game uses the code of Vampire Survivors. The session code still supports more players. This plugin adds the parts that are missing:
+
+- The join step and the character choice for player 2 on the character select page.
+- The move of the second controller from player 1 to player 2, with the controller maps for the menus.
+- A patch for the level-up page, which throws an exception when a run has more than one player.
 
 ## Status
 
-The plugin builds. A test in the game is not done.
+Tested on Linux with Proton and two virtual Xbox controllers, game build 26581996:
 
-## Install
+- Player 2 joins on the character select page and selects a character.
+- The run starts with two characters on one shared camera.
+- Each controller moves only its own character.
+- Each player confirms its own level-up.
+- The run continues when one player is dead. The game over comes when all players are dead.
+
+Known limits:
+
+- The heads-up display shows the equipment of player 1 only, and two magenta squares are visible next to it.
+- A dead player shows as a red rectangle.
+- The level-up page has no button to pass a level-up to the other player.
+- Player 2 must join again before each run.
+
+## Windows
+
+Download the archive `WarhammerSurvivorsCoop-<version>-windows.zip` from the releases of this repository.
+Unzip it into the game folder. The archive contains its own instructions.
+
+`./package.sh` makes this archive in `dist/`.
+
+## Install on Linux
 
 The script expects Linux, Steam with Proton, and Nix for the .NET SDK.
 
