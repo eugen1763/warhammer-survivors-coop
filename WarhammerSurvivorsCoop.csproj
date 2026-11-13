@@ -1,0 +1,24 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>WarhammerSurvivorsCoop</AssemblyName>
+    <RootNamespace>WarhammerSurvivorsCoop</RootNamespace>
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <GenerateDependencyFile>false</GenerateDependencyFile>
+    <DebugType>none</DebugType>
+    <NoWarn>MSB3277;CS0436</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="lib/bepinex-core/BepInEx.Core.dll" Private="false" />
+    <Reference Include="lib/bepinex-core/BepInEx.Unity.IL2CPP.dll" Private="false" />
+    <Reference Include="lib/bepinex-core/0Harmony.dll" Private="false" />
+    <Reference Include="lib/bepinex-core/Il2CppInterop.Runtime.dll" Private="false" />
+    <Reference Include="lib/bepinex-core/Il2CppInterop.Common.dll" Private="false" />
+    <Reference Include="lib/interop/*.dll" Private="false" />
+  </ItemGroup>
+</Project>
