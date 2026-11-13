@@ -17,9 +17,8 @@ If player 1 uses the keyboard and only one controller is available, set
 KeyboardForPlayerOne = true in BepInEx\config\local.warhammersurvivors.coop.cfg.
 
 Known limits
-- The heads-up display shows the equipment of player 1 only.
-- A dead player shows as a red rectangle.
-- Player 2 must join again before each run.
+- The level-up page showed no button to pass a level-up to the other player in the tests.
+- A character flashes red while enemies hit it. The game does this, not the mod.
 
 How to remove the mod
 Delete winhttp.dll, doorstop_config.ini, .doorstop_version, the folder BepInEx and the folder dotnet

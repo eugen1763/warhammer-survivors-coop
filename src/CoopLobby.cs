@@ -29,7 +29,10 @@ public class CoopLobby : MonoBehaviour
     private readonly Dictionary<int, int> _stickDirection = new();
     private int _playerOnePadId = -1;
     private int _lastMenuPadId = -1;
+    private int _dumpedPageId;
     private float _nextInputLog;
+    private readonly List<int> _rejoinPadIds = new();
+    private bool _rejoinPending;
     private string _status = "";
     private GUIStyle _style;
 
@@ -42,6 +45,7 @@ public class CoopLobby : MonoBehaviour
         if (_instance == null) return;
         _instance._page = page;
         _instance._choices.Clear();
+        _instance._rejoinPending = true;
         try
         {
             _instance.RememberPlayerOnePad();
@@ -80,6 +84,15 @@ public class CoopLobby : MonoBehaviour
         if (_page == null)
         {
             TrackMenuPad();
+            try
+            {
+                CoopHud.Tick();
+            }
+            catch (Exception e)
+            {
+                Plugin.Logger.LogError(e);
+            }
+
             if (Plugin.LogInput.Value) LogSession();
             return;
         }
@@ -125,6 +138,15 @@ public class CoopLobby : MonoBehaviour
             }
 
             Plugin.Logger.LogInfo(text);
+
+            var page = UnityEngine.Object.FindObjectOfType<VampireSurvivors.MainGamePage>();
+            if (page != null && page.GetInstanceID() != _dumpedPageId && manager.GetAllCharacters().Count > 1)
+            {
+                _dumpedPageId = page.GetInstanceID();
+                DebugDump.CoopConfig(manager.CoopConfig);
+                DebugDump.Hierarchy("equipment panels", page._EquipmentPanelContainer, 3);
+                DebugDump.Characters(manager);
+            }
         }
         catch (Exception e)
         {
@@ -150,6 +172,12 @@ public class CoopLobby : MonoBehaviour
         // The item list of the page is empty until the page fills it.
         if (_choices.Count == 0) ReadChoices();
 
+        if (_rejoinPending)
+        {
+            _rejoinPending = false;
+            RejoinPlayers(manager);
+        }
+
         JoinNewPlayers(manager);
         if (Plugin.LogInput.Value) LogInput(manager);
 
@@ -163,6 +191,7 @@ public class CoopLobby : MonoBehaviour
 
             if (player.GetButtonDown(RewiredAction.UICancelController))
             {
+                _rejoinPadIds.RemoveAll(id => player.controllers.ContainsController(ControllerType.Joystick, id));
                 manager.AddPlayerForRemoval(player);
                 continue;
             }
@@ -181,11 +210,11 @@ public class CoopLobby : MonoBehaviour
                 {
                     index = (index + step + _choices.Count) % _choices.Count;
                     selection.SelectedCharacter = _choices[index];
-                    if (i == 1) Plugin.LastPlayerTwoCharacter.Value = (int)selection.SelectedCharacter;
                 }
             }
 
             selection.Color = manager.GetSlotColor(i);
+            if (i == 1) RememberPlayerTwoCharacter(selection.SelectedCharacter);
             lines.Add($"PLAYER {i + 1}: {Name(selection.SelectedCharacter)}   [left / right: change, B: leave]");
         }
 
@@ -215,29 +244,44 @@ public class CoopLobby : MonoBehaviour
     // Warhammer Survivors gives all controllers to player 1, so the mod moves the controller itself.
     private void JoinNewPlayers(MultiplayerManager manager)
     {
-        var joined = manager.GetPlayers();
         foreach (var joystick in ReInput.controllers.GetJoysticks())
         {
-            if (joystick.id == _playerOnePadId || !joystick.GetAnyButtonDown()) continue;
-
-            var inUse = false;
-            for (var i = 1; i < joined.Count; i++) inUse |= joined[i].controllers.ContainsController(joystick);
-            if (inUse) continue;
-
-            RewiredPlayer free = null;
-            for (var id = 1; id < ReInput.players.playerCount && free == null; id++)
-            {
-                var candidate = ReInput.players.GetPlayer(id);
-                if (candidate != null && !joined.Contains(candidate)) free = candidate;
-            }
-
-            if (free == null) return;
-            var layouts = PlayerOneLayouts(joystick);
-            free.controllers.AddController(joystick, true);
-            AddMissingMaps(free, joystick, layouts);
-            manager.AddPlayer(free);
-            Plugin.Logger.LogInfo($"Controller {joystick.id} ({joystick.name}) joined as Rewired player {free.id}.");
+            if (joystick.GetAnyButtonDown()) Join(manager, joystick);
         }
+    }
+
+    // The game removes the extra players after each run. The mod adds them again with the same controllers.
+    private void RejoinPlayers(MultiplayerManager manager)
+    {
+        foreach (var joystick in ReInput.controllers.GetJoysticks())
+        {
+            if (_rejoinPadIds.Contains(joystick.id)) Join(manager, joystick);
+        }
+    }
+
+    private void Join(MultiplayerManager manager, Joystick joystick)
+    {
+        if (joystick.id == _playerOnePadId) return;
+        var joined = manager.GetPlayers();
+        for (var i = 1; i < joined.Count; i++)
+        {
+            if (joined[i].controllers.ContainsController(joystick)) return;
+        }
+
+        RewiredPlayer free = null;
+        for (var id = 1; id < ReInput.players.playerCount && free == null; id++)
+        {
+            var candidate = ReInput.players.GetPlayer(id);
+            if (candidate != null && !joined.Contains(candidate)) free = candidate;
+        }
+
+        if (free == null) return;
+        var layouts = PlayerOneLayouts(joystick);
+        free.controllers.AddController(joystick, true);
+        AddMissingMaps(free, joystick, layouts);
+        manager.AddPlayer(free);
+        if (!_rejoinPadIds.Contains(joystick.id)) _rejoinPadIds.Add(joystick.id);
+        Plugin.Logger.LogInfo($"Controller {joystick.id} ({joystick.name}) joined as Rewired player {free.id}.");
     }
 
     // The Rewired data of the game gives the menu actions of Warhammer Survivors to player 1 only.
@@ -336,6 +380,7 @@ public class CoopLobby : MonoBehaviour
                 {
                     Plugin.Logger.LogInfo($"Player {i + 1} had the character of a different player. The mod changed it to {free}.");
                     selection.SelectedCharacter = free;
+                    if (i == 1) RememberPlayerTwoCharacter(free);
                 }
                 else
                 {
@@ -345,6 +390,11 @@ public class CoopLobby : MonoBehaviour
 
             taken.Add(selection.SelectedCharacter);
         }
+    }
+
+    private static void RememberPlayerTwoCharacter(CharacterType character)
+    {
+        if (Plugin.LastPlayerTwoCharacter.Value != (int)character) Plugin.LastPlayerTwoCharacter.Value = (int)character;
     }
 
     private static Il2CppSystem.Collections.Generic.Dictionary<RewiredPlayer, CoopSelections> Selections(MultiplayerManager manager)

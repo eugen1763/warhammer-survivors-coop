@@ -2,13 +2,14 @@ using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 using Wilson.UI;
 
 namespace WarhammerSurvivorsCoop;
 
-[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.1.0")]
+[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.2.0")]
 public class Plugin : BasePlugin
 {
     public const string Guid = "local.warhammersurvivors.coop";
@@ -54,10 +55,41 @@ internal static class CharacterSelectPatches
 [HarmonyPatch]
 internal static class LevelUpPatches
 {
-    // With more than one player, the check throws a NullReferenceException in
-    // WSLevelUpPage.CanCharacterReceivePass and the level-up page stays empty.
-    // Without the check, the page behaves as in a run with one player: no pass button.
+    private static readonly List<(Transform card, Transform parent, int index)> Detached = new();
+
+    // WSLevelUpPage.CanCharacterReceivePass expects a WSLevelUpItemUI on each child of the choice container.
+    // The hint card for the fourth choice has none, which throws a NullReferenceException
+    // and leaves the level-up page empty. The mod removes such cards from the container during the check.
     [HarmonyPrefix]
     [HarmonyPatch(typeof(WSLevelUpPage), nameof(WSLevelUpPage.CheckIfPassAvailable))]
-    private static bool SkipPassCheck() => false;
+    private static void DetachOtherCards(WSLevelUpPage __instance)
+    {
+        Detached.Clear();
+        var container = __instance._ChoiceContainerGroup?.GetActiveItem();
+        if (container == null) return;
+        for (var i = container.childCount - 1; i >= 0; i--)
+        {
+            var card = container.GetChild(i);
+            if (card.GetComponent<WSLevelUpItemUI>() != null) continue;
+            Detached.Add((card, container, i));
+            card.SetParent(container.parent, false);
+        }
+    }
+
+    [HarmonyFinalizer]
+    [HarmonyPatch(typeof(WSLevelUpPage), nameof(WSLevelUpPage.CheckIfPassAvailable))]
+    private static System.Exception AttachOtherCards(System.Exception __exception)
+    {
+        for (var i = Detached.Count - 1; i >= 0; i--)
+        {
+            var (card, parent, index) = Detached[i];
+            if (card == null || parent == null) continue;
+            card.SetParent(parent, false);
+            card.SetSiblingIndex(index);
+        }
+
+        Detached.Clear();
+        if (__exception != null) Plugin.Logger.LogWarning($"The pass check failed: {__exception.Message}");
+        return null;
+    }
 }

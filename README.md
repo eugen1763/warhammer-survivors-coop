@@ -7,6 +7,7 @@ The game uses the code of Vampire Survivors. The session code still supports mor
 - The join step and the character choice for player 2 on the character select page.
 - The move of the second controller from player 1 to player 2, with the controller maps for the menus.
 - A patch for the level-up page, which throws an exception when a run has more than one player.
+- A correction of the heads-up display, which puts the equipment panels of all players in the same position.
 
 ## Status
 
@@ -18,12 +19,22 @@ Tested on Linux with Proton and two virtual Xbox controllers, game build 2658199
 - Each player confirms its own level-up.
 - The run continues when one player is dead. The game over comes when all players are dead.
 
+- The heads-up display shows one equipment panel for each player.
+- Player 2 stays in the session after a run.
+
 Known limits:
 
-- The heads-up display shows the equipment of player 1 only, and two magenta squares are visible next to it.
-- A dead player shows as a red rectangle.
-- The level-up page has no button to pass a level-up to the other player.
-- Player 2 must join again before each run.
+- The level-up page showed no button to pass a level-up to the other player in the tests. The check of the game for this button runs without an exception.
+- A character flashes red while enemies hit it. The game does this, not the mod.
+
+## Rules of the game for equipment
+
+The cooperative configuration of the game has these values:
+
+- Each player has an own set of weapons and passive items. The level-up of a player gives the item to that player only.
+- The game does not offer a weapon or a passive item to a player if a different player owns it.
+- A passive item of one player counts for the weapon evolutions of all players.
+- The level and the experience are common to all players.
 
 ## Windows
 
