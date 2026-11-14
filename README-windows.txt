@@ -6,6 +6,11 @@ Warhammer Survivors local coop - Windows install
 3. Start the game from Steam.
    The first start takes some minutes, because BepInEx generates its assemblies.
 
+How to update
+Close the game. Open PowerShell and run this command:
+   irm https://raw.githubusercontent.com/eugen1763/warhammer-survivors-coop/main/install.ps1 | iex
+The command downloads the latest release and unzips it into the game folder.
+
 How to play
 1. Open the character select page.
 2. Press a button on a second controller. Do not use B.

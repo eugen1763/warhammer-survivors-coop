@@ -75,23 +75,55 @@ The cooperative configuration of the game has these values:
 - A passive item of one player counts for the weapon evolutions of all players.
 - The level and the experience are common to all players.
 
-## Windows
+## Install or update on Windows
 
-Download the archive `WarhammerSurvivorsCoop-<version>-windows.zip` from the releases of this repository.
+1. Close the game.
+2. Open PowerShell.
+3. Run this command:
+
+```powershell
+irm https://raw.githubusercontent.com/eugen1763/warhammer-survivors-coop/main/install.ps1 | iex
+```
+
+The script finds the game in the Steam libraries. It downloads the latest release and unzips it into the game folder.
+Run the same command again to update the mod. The script keeps the configuration of the mod.
+
+If the script does not find the game, set `$env:WARHAMMER_SURVIVORS_DIR` to the game folder. Then run the command again.
+
+As an alternative, download the archive `WarhammerSurvivorsCoop-<version>-windows.zip` from the releases of this repository.
 Unzip it into the game folder. The archive contains its own instructions.
 
-`./package.sh` makes this archive in `dist/`.
+## Install or update on Linux
 
-## Install on Linux
-
-The script expects Linux, Steam with Proton, and Nix for the .NET SDK.
+The script expects Linux, Steam with Proton, `curl`, and `unzip`.
 
 1. Start the game one time without the mod, so that Steam creates the Proton prefix.
-2. Set `STEAM_LIBRARY` to the Steam library that contains the game. The default is `~/.local/share/Steam`.
-3. Run `./install.sh`.
+2. Close the game.
+3. Run this command:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/eugen1763/warhammer-survivors-coop/main/install.sh | bash
+```
+
 4. Start the game from Steam. The first start takes some minutes.
 
-`./install.sh --uninstall` removes BepInEx and the plugin from the game.
+The script finds the game in the Steam libraries. It downloads the latest release, unzips it into the game folder, and adds the `winhttp` override to the Proton prefix.
+Run the same command again to update the mod. The script keeps the configuration of the mod.
+
+If the script does not find the game, set `STEAM_LIBRARY` to the Steam library that contains the game. Then run the command again.
+
+To remove BepInEx and the plugin from the game, run this command:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/eugen1763/warhammer-survivors-coop/main/install.sh | bash -s -- --uninstall
+```
+
+## Build from source
+
+The build needs Nix for the .NET SDK and the folder `lib/`. See "Build references".
+
+- `./install.sh --build` builds the plugin and installs it into the game.
+- `./package.sh` builds the plugin and makes the Windows archive in `dist/`.
 
 ## Build references
 
