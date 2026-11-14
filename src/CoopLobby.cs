@@ -87,6 +87,8 @@ public class CoopLobby : MonoBehaviour
             try
             {
                 CoopHud.Tick();
+                CoopCamera.Tick();
+                CoopSprites.Tick();
                 LevelUpPatches.ReadPassInput();
             }
             catch (Exception e)

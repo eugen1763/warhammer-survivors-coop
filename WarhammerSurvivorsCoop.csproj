@@ -3,7 +3,7 @@
     <TargetFramework>net6.0</TargetFramework>
     <AssemblyName>WarhammerSurvivorsCoop</AssemblyName>
     <RootNamespace>WarhammerSurvivorsCoop</RootNamespace>
-    <Version>0.5.1</Version>
+    <Version>0.6.0</Version>
     <Authors>Finn</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/eugen1763/warhammer-survivors-coop</RepositoryUrl>

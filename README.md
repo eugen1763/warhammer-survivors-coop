@@ -4,6 +4,26 @@ A BepInEx 6 plugin that enables the hidden shared-screen cooperative mode of War
 
 ![A run with two players on one screen](docs/screenshots/run.png)
 
+## Quick install
+
+Close the game, then run one command. Run the same command again to update the mod.
+
+Windows, in PowerShell:
+
+```powershell
+irm https://raw.githubusercontent.com/eugen1763/warhammer-survivors-coop/main/install.ps1 | iex
+```
+
+Linux:
+
+```sh
+curl -fsSL https://raw.githubusercontent.com/eugen1763/warhammer-survivors-coop/main/install.sh | bash
+```
+
+See "Install or update on Windows" and "Install or update on Linux" for the details.
+
+## About
+
 This mod is not an official product. The mod has no connection to Games Workshop, to the developer of the game, or to the publisher of the game.
 You must own the game to use the mod.
 
@@ -14,6 +34,8 @@ The game uses the code of Vampire Survivors. The session code still supports mor
 - A patch for the level-up page, which throws an exception when a run has more than one player.
 - A replacement for the pass action on the level-up page, which throws an exception in the game.
 - A correction of the heads-up display, which puts the equipment panels of all players in the same position.
+- A camera that moves away when the players are far apart.
+- Replacements for the player arrow and for the tombstone of a dead player, which have no valid pictures in the game.
 
 The plugin also shows the weapon cooldown panel of the game for all weapons. This function is independent of the cooperative mode.
 
@@ -52,13 +74,22 @@ The level-up page shows the pass button when a different player can use one of t
 
 The game permits a pass only if the player has the Skip power-up, and a pass costs one Skip. The mod removes this condition by default. Set `FreePass = false` in `BepInEx/config/local.warhammersurvivors.coop.cfg` to get the rule of the game.
 
-## Double experience
+## More experience
 
-The mod can give double experience in a run with more than one player. This option is off by default.
+The mod can multiply the experience in a run with more than one player. This option is off by default.
 
-The options page of the pause menu has the tick box "Double XP in coop". Set the tick box to get double experience. The mod saves the value as `DoubleXp` in `BepInEx/config/local.warhammersurvivors.coop.cfg`.
+The options page of the pause menu has the tick box "Double XP in coop". Set the tick box to get more experience. The mod saves the value as `DoubleXp` in `BepInEx/config/local.warhammersurvivors.coop.cfg`.
+
+The entry `XpFactor` in the same file sets the factor. The default is 2. The permitted values are 0.1 to 10. If the factor is not 2, the tick box shows the factor, for example "XP x3 in coop".
 
 A run with one player always gives the experience of the game.
+
+## Camera
+
+The game keeps the two players on one screen and stops a player at the screen border.
+The mod moves the camera away when the distance between the players is more than half of the screen. Thus the players have more room.
+
+The entry `CameraMaxZoomOut` in `BepInEx/config/local.warhammersurvivors.coop.cfg` sets the maximum factor for the size of the visible area. The default is 1.5. The permitted values are 1 to 3. The value 1 keeps the camera of the game.
 
 ## Weapon cooldown panel
 

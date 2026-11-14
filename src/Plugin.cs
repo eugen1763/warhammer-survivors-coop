@@ -8,7 +8,7 @@ using Wilson.UI;
 
 namespace WarhammerSurvivorsCoop;
 
-[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.5.1")]
+[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.6.0")]
 public class Plugin : BasePlugin
 {
     public const string Guid = "local.warhammersurvivors.coop";
@@ -20,6 +20,8 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> FreePass;
     internal static ConfigEntry<bool> ShowWeaponCooldowns;
     internal static ConfigEntry<bool> DoubleXp;
+    internal static ConfigEntry<float> XpFactor;
+    internal static ConfigEntry<float> CameraMaxZoomOut;
 
     public override void Load()
     {
@@ -41,7 +43,18 @@ public class Plugin : BasePlugin
 
         DoubleXp = Config.Bind(
             "Gameplay", "DoubleXp", false,
-            "If true, a run with more than one player gives double experience. The options page of the pause menu changes this value.");
+            "If true, a run with more than one player gives more experience. The option XpFactor sets the quantity. The options page of the pause menu changes this value.");
+        XpFactor = Config.Bind(
+            "Gameplay", "XpFactor", 2f,
+            new ConfigDescription(
+                "The factor for the experience in a run with more than one player. The mod uses this value only if DoubleXp is true.",
+                new AcceptableValueRange<float>(0.1f, 10f)));
+
+        CameraMaxZoomOut = Config.Bind(
+            "Display", "CameraMaxZoomOut", 1.5f,
+            new ConfigDescription(
+                "The camera moves away when the players are far apart. This value is the maximum factor for the size of the visible area. The value 1 keeps the camera of the game.",
+                new AcceptableValueRange<float>(1f, 3f)));
 
         ShowWeaponCooldowns = Config.Bind(
             "Display", "ShowWeaponCooldowns", true,

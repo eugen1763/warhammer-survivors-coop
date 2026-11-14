@@ -25,9 +25,14 @@ Weapon cooldowns
 The mod shows the weapon cooldown panel of the game for all weapons.
 To hide the panel, press ESC in a run, open the options, and clear the tick box "Weapon cooldowns".
 
-Double experience
-The mod can give double experience in a run with more than one player. This option is off by default.
-To get double experience, press ESC in a run, open the options, and set the tick box "Double XP in coop".
+More experience
+The mod can multiply the experience in a run with more than one player. This option is off by default.
+To get more experience, press ESC in a run, open the options, and set the tick box "Double XP in coop".
+The entry XpFactor in BepInEx\config\local.warhammersurvivors.coop.cfg sets the factor. The default is 2.
+
+Camera
+The mod moves the camera away when the players are far apart.
+The entry CameraMaxZoomOut in the same file sets the maximum factor. The default is 1.5. The value 1 keeps the camera of the game.
 
 Known limits
 - The automatic test covered one pass of a level-up, from player 1 to player 2.

@@ -78,7 +78,7 @@ internal static class CooldownPanel
             }),
             false);
         controller.AddTickBox(
-            "Double XP in coop",
+            Plugin.XpFactor.Value == 2f ? "Double XP in coop" : $"XP x{Plugin.XpFactor.Value:0.##} in coop",
             Plugin.DoubleXp.Value,
             (Action<bool>)(value => Plugin.DoubleXp.Value = value),
             false);
