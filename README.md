@@ -52,6 +52,14 @@ The level-up page shows the pass button when a different player can use one of t
 
 The game permits a pass only if the player has the Skip power-up, and a pass costs one Skip. The mod removes this condition by default. Set `FreePass = false` in `BepInEx/config/local.warhammersurvivors.coop.cfg` to get the rule of the game.
 
+## Double experience
+
+The mod can give double experience in a run with more than one player. This option is off by default.
+
+The options page of the pause menu has the tick box "Double XP in coop". Set the tick box to get double experience. The mod saves the value as `DoubleXp` in `BepInEx/config/local.warhammersurvivors.coop.cfg`.
+
+A run with one player always gives the experience of the game.
+
 ## Weapon cooldown panel
 
 The game contains a panel that shows the cooldown of a weapon. The game shows it only for weapons that set the flag `showCooldown` in their data. The mod sets this flag for all weapons.

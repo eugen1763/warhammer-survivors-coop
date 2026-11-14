@@ -9,7 +9,7 @@ using Wilson.UI;
 
 namespace WarhammerSurvivorsCoop;
 
-/// <summary>Shows the weapon cooldown panel of the game for all weapons and adds a tick box for it to the options.</summary>
+/// <summary>Shows the weapon cooldown panel of the game for all weapons and adds the tick boxes of the mod to the options.</summary>
 [HarmonyPatch]
 internal static class CooldownPanel
 {
@@ -76,6 +76,11 @@ internal static class CooldownPanel
                 Plugin.ShowWeaponCooldowns.Value = value;
                 Apply();
             }),
+            false);
+        controller.AddTickBox(
+            "Double XP in coop",
+            Plugin.DoubleXp.Value,
+            (Action<bool>)(value => Plugin.DoubleXp.Value = value),
             false);
     }
 

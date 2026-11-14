@@ -8,7 +8,7 @@ using Wilson.UI;
 
 namespace WarhammerSurvivorsCoop;
 
-[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.4.2")]
+[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.5.0")]
 public class Plugin : BasePlugin
 {
     public const string Guid = "local.warhammersurvivors.coop";
@@ -19,6 +19,7 @@ public class Plugin : BasePlugin
     internal static ConfigEntry<bool> LogInput;
     internal static ConfigEntry<bool> FreePass;
     internal static ConfigEntry<bool> ShowWeaponCooldowns;
+    internal static ConfigEntry<bool> DoubleXp;
 
     public override void Load()
     {
@@ -38,6 +39,10 @@ public class Plugin : BasePlugin
             "Gameplay", "FreePass", true,
             "If true, a player can pass a level-up to a different player without the Skip power-up. If false, a pass costs one Skip, as the game defines it.");
 
+        DoubleXp = Config.Bind(
+            "Gameplay", "DoubleXp", false,
+            "If true, a run with more than one player gives double experience. The options page of the pause menu changes this value.");
+
         ShowWeaponCooldowns = Config.Bind(
             "Display", "ShowWeaponCooldowns", true,
             "If true, the weapon cooldown panel of the game shows all weapons. If false, the mod hides the panel. The options page of the pause menu changes this value.");
@@ -46,6 +51,7 @@ public class Plugin : BasePlugin
         Harmony.CreateAndPatchAll(typeof(CharacterSelectPatches), Guid);
         Harmony.CreateAndPatchAll(typeof(LevelUpPatches), Guid);
         Harmony.CreateAndPatchAll(typeof(CooldownPanel), Guid);
+        Harmony.CreateAndPatchAll(typeof(CoopXp), Guid);
         Log.LogInfo("Local coop is active. Open the character select page to let player 2 join.");
     }
 }
