@@ -45,9 +45,13 @@ The plugin also shows the weapon cooldown panel of the game for all weapons. Thi
 | --- | --- |
 | ![Character select page](docs/screenshots/character-select.png) | ![Level-up page](docs/screenshots/level-up.png) |
 
-| Options page with the tick box "Weapon cooldowns" | Equipment panels and cooldown panels of two players |
+| Options page with the tick boxes of the mod | Equipment panels and cooldown panels of two players |
 | --- | --- |
 | ![Options page](docs/screenshots/options.png) | ![Run](docs/screenshots/run.png) |
+
+| Camera with the players far apart | Tombstone of a dead player in the player color |
+| --- | --- |
+| ![Camera](docs/screenshots/camera.png) | ![Tombstone](docs/screenshots/tombstone.png) |
 
 ## Status
 
