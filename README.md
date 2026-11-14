@@ -10,6 +10,8 @@ The game uses the code of Vampire Survivors. The session code still supports mor
 - A replacement for the pass action on the level-up page, which throws an exception in the game.
 - A correction of the heads-up display, which puts the equipment panels of all players in the same position.
 
+The plugin also shows the weapon cooldown panel of the game for all weapons. This function is independent of the cooperative mode.
+
 ## Status
 
 Tested on Linux with Proton and two virtual Xbox controllers, game build 26581996:
@@ -34,6 +36,12 @@ Known limits:
 The level-up page shows the pass button when a different player can use one of the offered items. The button shows its controller button.
 
 The game permits a pass only if the player has the Skip power-up, and a pass costs one Skip. The mod removes this condition by default. Set `FreePass = false` in `BepInEx/config/local.warhammersurvivors.coop.cfg` to get the rule of the game.
+
+## Weapon cooldown panel
+
+The game contains a panel that shows the cooldown of a weapon. The game shows it only for weapons that set the flag `showCooldown` in their data. The mod sets this flag for all weapons.
+
+The options page of the pause menu has the tick box "Weapon cooldowns". Clear the tick box to hide the panel. The mod saves the value as `ShowWeaponCooldowns` in `BepInEx/config/local.warhammersurvivors.coop.cfg`.
 
 ## Rules of the game for equipment
 
