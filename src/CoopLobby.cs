@@ -20,6 +20,7 @@ namespace WarhammerSurvivorsCoop;
 public class CoopLobby : MonoBehaviour
 {
     private const float StickThreshold = 0.6f;
+    private const float ControllerCheckInterval = 0.5f;
 
     private static CoopLobby _instance;
 
@@ -31,6 +32,7 @@ public class CoopLobby : MonoBehaviour
     private int _lastMenuPadId = -1;
     private int _dumpedPageId;
     private float _nextInputLog;
+    private float _nextControllerCheck;
     private readonly List<int> _rejoinPadIds = new();
     private bool _rejoinPending;
     private string _status = "";
@@ -86,6 +88,7 @@ public class CoopLobby : MonoBehaviour
             TrackMenuPad();
             try
             {
+                RestoreControllers();
                 CoopHud.Tick();
                 CoopCamera.Tick();
                 CoopSprites.Tick();
@@ -116,10 +119,21 @@ public class CoopLobby : MonoBehaviour
         if (!ReInput.isReady || Time.unscaledTime < _nextInputLog) return;
         _nextInputLog = Time.unscaledTime + 1f;
         var manager = MultiplayerManager.Instance;
-        if (manager == null || manager.GetPlayers().Count < 2) return;
+        if (manager == null || manager.GetAllCharacters().Count < 2) return;
 
         try
         {
+            var pads = $"pads: playerOnePad={_playerOnePadId} players={manager.GetPlayers().Count}";
+            foreach (var joystick in ReInput.controllers.GetJoysticks())
+            {
+                pads += $" | pad {joystick.id} '{joystick.name}' stickX={joystick.GetAxis(0):0.0} owners=";
+                for (var id = 0; id < ReInput.players.playerCount; id++)
+                {
+                    if (ReInput.players.GetPlayer(id).controllers.ContainsController(joystick)) pads += id;
+                }
+            }
+            Plugin.Logger.LogInfo(pads);
+
             var selected = manager.GetSelectedPlayer();
             var text = $"session: selected={(selected == null ? -1 : selected.id)} blocked={manager.IsUIBeingBlocked} timeScale={Time.timeScale:0.0}";
             var ui = manager._uiControllingPlayers;
@@ -136,7 +150,7 @@ public class CoopLobby : MonoBehaviour
 
             foreach (var character in manager.GetAllCharacters())
             {
-                text += $" | character {character._PlayerIndex} {character._currentCharacterData?.charName} hp={character.CurrentHp:0} dead={character.IsDead}"
+                text += $" | character {character._PlayerIndex} {character._currentCharacterData?.charName} pos=({character.transform.position.x:0.0},{character.transform.position.y:0.0}) hp={character.CurrentHp:0} dead={character.IsDead}"
                     + $" main={character.CountsAsMainCharacterForRevivals} revival={character.MultiplayerRevivalAllowed}";
             }
 
@@ -163,6 +177,69 @@ public class CoopLobby : MonoBehaviour
         foreach (var joystick in ReInput.controllers.GetJoysticks())
         {
             if (joystick.GetAnyButtonDown()) _lastMenuPadId = joystick.id;
+        }
+    }
+
+    // Rewired gives a controller that connects again to player 1, so two controllers move the same character.
+    // The mod gives this controller to the extra player who has no controller.
+    private void RestoreControllers()
+    {
+        if (!ReInput.isReady || Time.unscaledTime < _nextControllerCheck) return;
+        _nextControllerCheck = Time.unscaledTime + ControllerCheckInterval;
+
+        var manager = MultiplayerManager.Instance;
+        if (manager == null) return;
+        var players = manager.GetPlayers();
+        if (players.Count < 2) return;
+
+        var playerOne = ReInput.players.GetPlayer(0);
+        if (Plugin.KeyboardForPlayerOne.Value || playerOne.controllers.ContainsController(ControllerType.Joystick, _playerOnePadId))
+        {
+            for (var i = 1; i < players.Count; i++) GiveControllerBack(playerOne, players[i]);
+        }
+        else if (playerOne.controllers.joystickCount == 1)
+        {
+            // The controller of player 1 has a new identifier after it connects again.
+            foreach (var joystick in ReInput.controllers.GetJoysticks())
+            {
+                if (playerOne.controllers.ContainsController(joystick)) _playerOnePadId = joystick.id;
+            }
+        }
+
+        // The game keeps a list of the players who lost their controller. It shows the "Player disconnected" dialog for them
+        // and removes them from the run when the dialog closes. The game finds a player again only by the controller that
+        // Rewired gives to that player. In this game Rewired gives each controller to player 1, so the mod clears the list.
+        // The move of a controller away from player 1 also puts player 1 in the list.
+        var disconnected = manager._disconnectedPlayers;
+        for (var i = disconnected.Count - 1; i >= 0; i--)
+        {
+            var player = disconnected[i];
+            if (player != null && player.controllers.joystickCount > 0) manager.RemoveDisconnectedPlayer(player);
+        }
+
+        // The game opens the dialog two frames after a player enters the list, so the dialog can open after the list is empty.
+        if (disconnected.Count > 0) return;
+        ClosePopup(MultiplayerManager.ControllerDisconnectedBlockingPopupId);
+        ClosePopup(MultiplayerManager.ControllerDisconnectedHelpPopupId);
+    }
+
+    private static void ClosePopup(string id)
+    {
+        if (VampireSurvivors.PopupManager.PopupExists(id)) VampireSurvivors.PopupManager.ClosePopup(id);
+    }
+
+    private void GiveControllerBack(RewiredPlayer playerOne, RewiredPlayer player)
+    {
+        if (player == null || player.controllers.joystickCount > 0) return;
+        foreach (var joystick in ReInput.controllers.GetJoysticks())
+        {
+            if (joystick.id == _playerOnePadId || !playerOne.controllers.ContainsController(joystick)) continue;
+            var layouts = PlayerOneLayouts(joystick);
+            player.controllers.AddController(joystick, true);
+            AddMissingMaps(player, joystick, layouts);
+            if (!_rejoinPadIds.Contains(joystick.id)) _rejoinPadIds.Add(joystick.id);
+            Plugin.Logger.LogInfo($"Controller {joystick.id} ({joystick.name}) connected again. Rewired player {player.id} has it now.");
+            return;
         }
     }
 
