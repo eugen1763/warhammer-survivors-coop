@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using HarmonyLib;
 using UnityEngine;
 using VampireSurvivors;
@@ -12,6 +14,7 @@ namespace WarhammerSurvivorsCoop;
 internal static class CooldownPanel
 {
     private static int _tickBoxFrame = -1;
+    private static readonly HashSet<IntPtr> HiddenContainers = new();
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(DataManager), nameof(DataManager.BuildConvertedData))]
@@ -23,7 +26,11 @@ internal static class CooldownPanel
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(MainGamePage), nameof(MainGamePage.InitializeEquipment))]
-    private static void AfterInitializeEquipment() => Apply();
+    private static void AfterInitializeEquipment()
+    {
+        HiddenContainers.Clear();
+        Apply();
+    }
 
     [HarmonyPostfix]
     [HarmonyPatch(typeof(WSOptionsController), nameof(WSOptionsController.BuildQuickAccessPage))]
@@ -32,6 +39,28 @@ internal static class CooldownPanel
     [HarmonyPostfix]
     [HarmonyPatch(typeof(WSOptionsController), nameof(WSOptionsController.BuildIngamePage))]
     private static void AfterBuildIngamePage(WSOptionsController __instance) => AddTickBox(__instance);
+
+    // The game keeps the panel of a dead character. The panel then shows on the black page that follows the death of all players.
+    [HarmonyPostfix]
+    [HarmonyPatch(typeof(WSGameEquipmentCooldownPanel), nameof(WSGameEquipmentCooldownPanel.LateUpdate))]
+    private static void HideForDeadCharacter(WSGameEquipmentCooldownPanel __instance)
+    {
+        var container = __instance._WeaponContainer;
+        var character = __instance._characterController;
+        if (container == null || character == null) return;
+
+        var slots = container.gameObject;
+        if (character.IsDead)
+        {
+            if (!slots.activeSelf) return;
+            slots.SetActive(false);
+            HiddenContainers.Add(container.Pointer);
+        }
+        else if (HiddenContainers.Remove(container.Pointer))
+        {
+            slots.SetActive(true);
+        }
+    }
 
     private static void AddTickBox(WSOptionsController controller)
     {
@@ -42,7 +71,7 @@ internal static class CooldownPanel
         controller.AddTickBox(
             "Weapon cooldowns",
             Plugin.ShowWeaponCooldowns.Value,
-            (System.Action<bool>)(value =>
+            (Action<bool>)(value =>
             {
                 Plugin.ShowWeaponCooldowns.Value = value;
                 Apply();
@@ -53,7 +82,7 @@ internal static class CooldownPanel
     private static void Apply()
     {
         var show = Plugin.ShowWeaponCooldowns.Value;
-        foreach (var panel in Object.FindObjectsOfType<WSGameEquipmentCooldownPanel>(true))
+        foreach (var panel in UnityEngine.Object.FindObjectsOfType<WSGameEquipmentCooldownPanel>(true))
         {
             if (!show)
             {

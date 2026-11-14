@@ -8,7 +8,7 @@ using Wilson.UI;
 
 namespace WarhammerSurvivorsCoop;
 
-[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.4.1")]
+[BepInPlugin(Guid, "Warhammer Survivors Local Coop", "0.4.2")]
 public class Plugin : BasePlugin
 {
     public const string Guid = "local.warhammersurvivors.coop";
