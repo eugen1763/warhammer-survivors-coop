@@ -17,7 +17,7 @@ If player 1 uses the keyboard and only one controller is available, set
 KeyboardForPlayerOne = true in BepInEx\config\local.warhammersurvivors.coop.cfg.
 
 Known limits
-- The level-up page showed no button to pass a level-up to the other player in the tests.
+- The automatic test covered one pass of a level-up, from player 1 to player 2.
 - A character flashes red while enemies hit it. The game does this, not the mod.
 
 How to remove the mod

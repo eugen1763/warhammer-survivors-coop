@@ -7,6 +7,7 @@ The game uses the code of Vampire Survivors. The session code still supports mor
 - The join step and the character choice for player 2 on the character select page.
 - The move of the second controller from player 1 to player 2, with the controller maps for the menus.
 - A patch for the level-up page, which throws an exception when a run has more than one player.
+- A replacement for the pass action on the level-up page, which throws an exception in the game.
 - A correction of the heads-up display, which puts the equipment panels of all players in the same position.
 
 ## Status
@@ -21,11 +22,18 @@ Tested on Linux with Proton and two virtual Xbox controllers, game build 2658199
 
 - The heads-up display shows one equipment panel for each player.
 - Player 2 stays in the session after a run.
+- A player passes a level-up to the other player with the pass button. The other player then selects an item.
 
 Known limits:
 
-- The level-up page showed no button to pass a level-up to the other player in the tests. The check of the game for this button runs without an exception.
+- The automatic test covered one pass, from player 1 to player 2, at the first level-up.
 - A character flashes red while enemies hit it. The game does this, not the mod.
+
+## Pass of a level-up
+
+The level-up page shows the pass button when a different player can use one of the offered items. The button shows its controller button.
+
+The game permits a pass only if the player has the Skip power-up, and a pass costs one Skip. The mod removes this condition by default. Set `FreePass = false` in `BepInEx/config/local.warhammersurvivors.coop.cfg` to get the rule of the game.
 
 ## Rules of the game for equipment
 

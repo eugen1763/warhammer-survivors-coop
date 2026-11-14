@@ -87,6 +87,7 @@ public class CoopLobby : MonoBehaviour
             try
             {
                 CoopHud.Tick();
+                LevelUpPatches.ReadPassInput();
             }
             catch (Exception e)
             {
