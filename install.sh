@@ -4,14 +4,14 @@
 set -euo pipefail
 
 HERE="$(cd "$(dirname "$0")" && pwd)"
-LIBRARY="${STEAM_LIBRARY:-/mnt/nvme2/SteamLibrary}"
+LIBRARY="${STEAM_LIBRARY:-$HOME/.local/share/Steam}"
 GAME="$LIBRARY/steamapps/common/Warhammer Survivors"
 USER_REG="$LIBRARY/steamapps/compatdata/3669620/pfx/user.reg"
 BEPINEX_ZIP="$HERE/vendor/BepInEx-Unity.IL2CPP-win-x64-6.0.0-be.793.zip"
 # Wine loads its builtin winhttp.dll by default. BepInEx starts from the winhttp.dll in the game folder.
 OVERRIDE='"winhttp"="native,builtin"'
 
-[ -d "$GAME" ] || { echo "The game folder does not exist: $GAME" >&2; exit 1; }
+[ -d "$GAME" ] || { echo "The game folder does not exist: $GAME. Set STEAM_LIBRARY to the Steam library that contains the game." >&2; exit 1; }
 [ -f "$USER_REG" ] || { echo "The Proton prefix does not exist. Start the game one time, then run this script again." >&2; exit 1; }
 if pgrep -f 'WarhammerSurvivors.exe' >/dev/null; then
     echo "Close the game, then run this script again." >&2

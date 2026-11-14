@@ -2,6 +2,11 @@
 
 A BepInEx 6 plugin that enables the hidden shared-screen cooperative mode of Warhammer Survivors for two local players.
 
+![A run with two players on one screen](docs/screenshots/run.png)
+
+This mod is not an official product. The mod has no connection to Games Workshop, to the developer of the game, or to the publisher of the game.
+You must own the game to use the mod.
+
 The game uses the code of Vampire Survivors. The session code still supports more players. This plugin adds the parts that are missing:
 
 - The join step and the character choice for player 2 on the character select page.
@@ -11,6 +16,16 @@ The game uses the code of Vampire Survivors. The session code still supports mor
 - A correction of the heads-up display, which puts the equipment panels of all players in the same position.
 
 The plugin also shows the weapon cooldown panel of the game for all weapons. This function is independent of the cooperative mode.
+
+## Screenshots
+
+| Character select page with player 2 | Level-up page with the pass button |
+| --- | --- |
+| ![Character select page](docs/screenshots/character-select.png) | ![Level-up page](docs/screenshots/level-up.png) |
+
+| Options page with the tick box "Weapon cooldowns" | Equipment panels and cooldown panels of two players |
+| --- | --- |
+| ![Options page](docs/screenshots/options.png) | ![Run](docs/screenshots/run.png) |
 
 ## Status
 
@@ -64,7 +79,7 @@ Unzip it into the game folder. The archive contains its own instructions.
 The script expects Linux, Steam with Proton, and Nix for the .NET SDK.
 
 1. Start the game one time without the mod, so that Steam creates the Proton prefix.
-2. Set `STEAM_LIBRARY` if the game is not in `/mnt/nvme2/SteamLibrary`.
+2. Set `STEAM_LIBRARY` to the Steam library that contains the game. The default is `~/.local/share/Steam`.
 3. Run `./install.sh`.
 4. Start the game from Steam. The first start takes some minutes.
 
@@ -88,3 +103,14 @@ The folder `lib/` is not in the repository, because it contains assemblies that 
 4. Select the character of player 1 and start the run.
 
 If player 1 uses the keyboard and only one controller is available, set `KeyboardForPlayerOne = true` in `BepInEx/config/local.warhammersurvivors.coop.cfg`.
+
+## Contributions
+
+Open an issue for a bug report. Include the game build and the file `BepInEx/LogOutput.log`.
+Pull requests are welcome.
+
+## License
+
+The source code of the mod has the MIT License. See [LICENSE](LICENSE).
+
+The repository and the Windows archive contain a copy of BepInEx, which has a different license. See [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

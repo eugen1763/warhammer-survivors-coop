@@ -18,6 +18,8 @@ rm -f "$STAGE/changelog.txt"
 mkdir -p "$STAGE/BepInEx/plugins"
 cp "$HERE/bin/Release/net6.0/WarhammerSurvivorsCoop.dll" "$STAGE/BepInEx/plugins/"
 cp "$HERE/README-windows.txt" "$STAGE/WarhammerSurvivorsCoop-README.txt"
+cp "$HERE/LICENSE" "$STAGE/WarhammerSurvivorsCoop-LICENSE.txt"
+cp "$HERE/THIRD-PARTY-NOTICES.md" "$STAGE/WarhammerSurvivorsCoop-THIRD-PARTY-NOTICES.md"
 
 mkdir -p "$HERE/dist"
 OUT="$HERE/dist/WarhammerSurvivorsCoop-$VERSION-windows.zip"

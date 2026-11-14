@@ -29,3 +29,8 @@ Delete winhttp.dll, doorstop_config.ini, .doorstop_version, the folder BepInEx a
 from the game folder.
 
 If the mod does not work, look at BepInEx\LogOutput.log in the game folder.
+
+License
+The mod has the MIT License. See WarhammerSurvivorsCoop-LICENSE.txt.
+BepInEx has the GNU Lesser General Public License, version 2.1. See WarhammerSurvivorsCoop-THIRD-PARTY-NOTICES.md.
+This mod is not an official product of the owners of the game.
